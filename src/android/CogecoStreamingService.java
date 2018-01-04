@@ -69,6 +69,7 @@ import java.util.List;
 public class CogecoStreamingService extends MediaBrowserServiceCompat {
 
     private MediaSessionCompat mSession;
+    private MusicProvider mMusicProvider;
     public static final String EXTRA_METADATA_ADVERTISEMENT =
             "android.media.metadata.ADVERTISEMENT";
 
@@ -83,6 +84,8 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
                 MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
 
         IntentFilter filter = new IntentFilter("com.google.android.gms.car.media.STATUS");
+        mMusicProvider = new MusicProvider();
+
         BroadcastReceiver receiver = new BroadcastReceiver() {
 
             public void onReceive(Context context, Intent intent) {
@@ -110,7 +113,27 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
     @Override
     public void onLoadChildren(@NonNull final String parentMediaId,
                                @NonNull final Result<List<MediaItem>> result) {
-        result.sendResult(new ArrayList<MediaItem>());
+
+        if (!mMusicProvider.isInitialized()) {
+            // Use result.detach to allow calling result.sendResult from another thread:
+            result.detach();
+
+            mMusicProvider.retrieveMediaAsync(new MusicProvider.Callback() {
+                @Override
+                public void onMusicCatalogReady(boolean success) {
+                    if (success) {
+                        //Success
+                    } else {
+                        result.sendResult(Collections.<MediaItem>emptyList());
+                    }
+                }
+            });
+
+        } else {
+            // If our music catalog is already loaded/cached, load them into result immediately
+            // loadChildrenImpl(parentMediaId, result);
+        }                        
+       //  result.sendResult(new ArrayList<MediaItem>());
     }
 
     private final class MediaSessionCallback extends MediaSessionCompat.Callback {
