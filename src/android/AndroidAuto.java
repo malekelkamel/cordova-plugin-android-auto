@@ -1,4 +1,4 @@
-package cordova-plugin-android-auto;
+package com.bhvr.android.auto;
 
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
