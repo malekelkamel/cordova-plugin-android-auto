@@ -49,7 +49,7 @@ public class MusicProvider {
 
     private static final String CUSTOM_METADATA_TRACK_SOURCE = "__SOURCE__";
 
-    private static final String JSON_MUSIC = "stations";
+    private static final String JSON_MUSIC = "data";
     private static final String JSON_TITLE = "title";
     private static final String JSON_SOURCE = "source";
     private static final String JSON_IMAGE = "image";
@@ -226,6 +226,7 @@ public class MusicProvider {
                     buildListsByGenre();
                 }
                 mCurrentState = State.INITIALIZED;
+                System.out.println(mCurrentState);
             }
         } catch (JSONException e) {
         } finally {
@@ -233,34 +234,38 @@ public class MusicProvider {
                 // Something bad happened, so we reset state to NON_INITIALIZED to allow
                 // retries (eg if the network connection is temporary unavailable)
                 mCurrentState = State.NON_INITIALIZED;
+                System.out.println(mCurrentState);
             }
         }
     }
 
 
     private MediaMetadata buildFromJSON(JSONObject json, String basePath) throws JSONException {
+
         String title = json.getString("name");
 
-        JSONArray images = json.getJSONArray("images");
-        JSONObject stationImages = images.getJSONObject(0);
+        JSONObject images = json.getJSONObject("images");
+        JSONObject image = images.getJSONObject("logo");
 
         JSONArray streams = json.getJSONArray("streams");
-        JSONObject stream = images.getJSONObject(0);
+        JSONObject stream = streams.getJSONObject(0);
 
-        String source = json.getString(stream.getString("url"));
-        String iconUrl = json.getString(stationImages.getString("150"));
+        String source = stream.getString("url");
+        String iconUrl = image.getString("ori");
 
 
         // Media is stored relative to JSON file
         if (!source.startsWith("http")) {
             source = basePath + source;
         }
+        
         if (!iconUrl.startsWith("http")) {
             iconUrl = basePath + iconUrl;
         }
         // Since we don't have a unique ID in the server, we fake one using the hashcode of
         // the music source. In a real world app, this could come from the server.
-        String id = String.valueOf(source.hashCode());
+
+         String id = String.valueOf(source.hashCode());
 
         // Adding the music source to the MediaMetadata (and consequently using it in the
         // mediaSession.setMetadata) is not a good idea for a real world music app, because

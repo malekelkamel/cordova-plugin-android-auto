@@ -124,7 +124,7 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
                     if (success) {
                         //Success
                     } else {
-                        result.sendResult(Collections.<MediaItem>emptyList());
+                        result.sendResult(new ArrayList<MediaItem>());
                     }
                 }
             });
