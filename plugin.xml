@@ -8,6 +8,8 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.a
     <js-module name="AndroidAuto" src="www/AndroidAuto.js">
         <clobbers target="cordova.plugins.AndroidAuto" />
     </js-module>
+     <repo>https://github.com/malekelkamel/cordova-plugin-android-auto.git</repo>
+    
 
     <platform name="android">
     <framework src="com.android.support:support-media-compat:27.0.2"/>
