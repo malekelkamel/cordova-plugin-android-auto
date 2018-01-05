@@ -86,6 +86,9 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
     private MusicProvider mMusicProvider;
     private PlaybackManager mPlayback;
     private List<MediaMetadataCompat>  stations;
+    private String currentMediaId;
+    private int currentMediaIndex;
+    private int stationsLength;
     public static final String EXTRA_METADATA_ADVERTISEMENT =
             "android.media.metadata.ADVERTISEMENT";
 
@@ -173,8 +176,8 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
 
         ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = mMusicProvider.getStationsList();
         List<MediaItem> mediaItems = new ArrayList<>();
-
         Iterator<Map.Entry<String, List<MediaMetadataCompat>>> iterator = stationsList.entrySet().iterator();
+
         while (iterator.hasNext()) {
             Map.Entry<String, List<MediaMetadataCompat>> station = iterator.next();
             List<MediaMetadataCompat>  tmpStations = station.getValue();
@@ -192,7 +195,8 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
                 );
                 mediaItems.add(item);
             }
-    }
+        }
+        stationsLength = mediaItems.size();
         result.sendResult(mediaItems);
 
     }
@@ -200,7 +204,9 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
     private final class MediaSessionCallback extends MediaSessionCompat.Callback {
         @Override
         public void onPlay() {
-        super.onPlay();
+            MediaMetadataCompat metadata =getMediametaData(currentMediaId);
+            mPlayback.setMediaUrl(getMediaUrl(currentMediaId));
+            mPlayback.play(metadata);
         }
 
         @Override
@@ -213,7 +219,7 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
 
         @Override
         public void onPlayFromMediaId(String mediaId, Bundle extras) {
-
+            currentMediaId = mediaId;
             mSession.setActive(true);
             MediaMetadataCompat metadata =getMediametaData(mediaId);
             mSession.setMetadata(metadata);
@@ -223,18 +229,40 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
 
         @Override
         public void onPause() {
+            mPlayback.pause();
         }
 
         @Override
         public void onStop() {
+            mPlayback.stop();
         }
 
         @Override
         public void onSkipToNext() {
+            if(currentMediaIndex == stationsLength) {
+                return;
+            }
+            mSession.setActive(true);
+            MediaMetadataCompat metadata =getMediametaDataByIndex(currentMediaIndex + 1);
+            mSession.setMetadata(metadata);
+            mPlayback.setMediaUrl(getMediaUrl(currentMediaId));
+            mPlayback.play(metadata);
         }
 
         @Override
         public void onSkipToPrevious() {
+            System.out.println("prev");
+            if(currentMediaIndex == 0) {
+                return;
+            }
+
+            mSession.setActive(true);
+            MediaMetadataCompat metadata =getMediametaDataByIndex(currentMediaIndex - 1);
+            mSession.setMetadata(metadata);
+            mPlayback.setMediaUrl(getMediaUrl(currentMediaId));
+            mPlayback.play(metadata);
+
+
         }
 
         @Override
@@ -262,11 +290,35 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
         }
         return metaData;
     }
+
+    private MediaMetadataCompat getMediametaDataByIndex(int index) {
+        int j= 0;
+        MediaMetadataCompat metaData = null;
+        ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = mMusicProvider.getStationsList();
+        Iterator<Map.Entry<String, List<MediaMetadataCompat>>> iterator = stationsList.entrySet().iterator();
+        while (iterator.hasNext() ) {
+            j++;
+            Map.Entry<String, List<MediaMetadataCompat>> station = iterator.next();
+            List<MediaMetadataCompat>  tmpStations = station.getValue();
+            MediaMetadataCompat st = tmpStations.get(index);
+            currentMediaId = st.getString(METADATA_KEY_MEDIA_ID);
+            if(j == index) {
+                metaData =  st;
+                currentMediaId = st.getString(METADATA_KEY_MEDIA_ID);
+            }
+
+        }
+        return metaData;
+    }
+
     private String getMediaUrl(String id) {
         String url = "";
+        int j = 0;
         ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = mMusicProvider.getStationsList();
         Iterator<Map.Entry<String, List<MediaMetadataCompat>>> iterator = stationsList.entrySet().iterator();
         while (iterator.hasNext()) {
+            j++;
+            currentMediaIndex = j;
             Map.Entry<String, List<MediaMetadataCompat>> station = iterator.next();
             List<MediaMetadataCompat>  tmpStations = station.getValue();
             for(int i=0; i< tmpStations.size(); i++) {
