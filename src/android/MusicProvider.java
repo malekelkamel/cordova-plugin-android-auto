@@ -18,6 +18,7 @@ package com.bhvr.android.auto;
 
 import android.media.MediaMetadata;
 import android.os.AsyncTask;
+import android.support.v4.media.MediaMetadataCompat;
 
 
 import org.json.JSONArray;
@@ -54,12 +55,9 @@ public class MusicProvider {
     private static final String JSON_SOURCE = "source";
     private static final String JSON_IMAGE = "image";
 
-
-    // Categorized caches for music track data:
-    private ConcurrentMap<String, List<MediaMetadata>> mMusicListByGenre;
+    private ConcurrentMap<String, List<MediaMetadataCompat>> mStationLists;
     private final ConcurrentMap<String, MutableMediaMetadata> mMusicListById;
 
-    private final Set<String> mFavoriteTracks;
 
     enum State {
         NON_INITIALIZED, INITIALIZING, INITIALIZED
@@ -72,91 +70,19 @@ public class MusicProvider {
     }
 
     public MusicProvider() {
-        mMusicListByGenre = new ConcurrentHashMap<>();
         mMusicListById = new ConcurrentHashMap<>();
-        mFavoriteTracks = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-    }
-
-    /**
-     * Get an iterator over the list of genres
-     *
-     * @return genres
-     */
-    public Iterable<String> getGenres() {
-        if (mCurrentState != State.INITIALIZED) {
-            return Collections.emptyList();
-        }
-        return mMusicListByGenre.keySet();
     }
 
     /**
      * Get music tracks of the given genre
-     *
      */
-    public List<MediaMetadata> getMusicsByGenre(String genre) {
-        if (mCurrentState != State.INITIALIZED || !mMusicListByGenre.containsKey(genre)) {
-            return Collections.emptyList();
-        }
-        return mMusicListByGenre.get(genre);
-    }
 
-    /**
-     * Very basic implementation of a search that filter music tracks which title containing
-     * the given query.
-     *
-     */
-    public Iterable<MediaMetadata> searchMusic(String titleQuery) {
+   public ConcurrentMap<String, List<MediaMetadataCompat>> getStationsList() {
         if (mCurrentState != State.INITIALIZED) {
-            return Collections.emptyList();
+            return new ConcurrentHashMap<>();
         }
-        ArrayList<MediaMetadata> result = new ArrayList<>();
-        titleQuery = titleQuery.toLowerCase();
-        for (MutableMediaMetadata track : mMusicListById.values()) {
-            if (track.metadata.getString(MediaMetadata.METADATA_KEY_TITLE).toLowerCase()
-                    .contains(titleQuery)) {
-                result.add(track.metadata);
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Return the MediaMetadata for the given musicID.
-     *
-     * @param musicId The unique, non-hierarchical music ID.
-     */
-    public MediaMetadata getMusic(String musicId) {
-        return mMusicListById.containsKey(musicId) ? mMusicListById.get(musicId).metadata : null;
-    }
-
-    public synchronized void updateMusic(String musicId, MediaMetadata metadata) {
-        MutableMediaMetadata track = mMusicListById.get(musicId);
-        if (track == null) {
-            return;
-        }
-
-        String oldGenre = track.metadata.getString(MediaMetadata.METADATA_KEY_GENRE);
-        String newGenre = metadata.getString(MediaMetadata.METADATA_KEY_GENRE);
-
-        track.metadata = metadata;
-
-        // if genre has changed, we need to rebuild the list by genre
-        if (!oldGenre.equals(newGenre)) {
-            buildListsByGenre();
-        }
-    }
-
-    public void setFavorite(String musicId, boolean favorite) {
-        if (favorite) {
-            mFavoriteTracks.add(musicId);
-        } else {
-            mFavoriteTracks.remove(musicId);
-        }
-    }
-
-    public boolean isFavorite(String musicId) {
-        return mFavoriteTracks.contains(musicId);
-    }
+        return mStationLists;
+   }
 
     public boolean isInitialized() {
         return mCurrentState == State.INITIALIZED;
@@ -190,20 +116,21 @@ public class MusicProvider {
         }.execute();
     }
 
-    private synchronized void buildListsByGenre() {
-        ConcurrentMap<String, List<MediaMetadata>> newMusicListByGenre = new ConcurrentHashMap<>();
+    private synchronized void buildListById() {
+        ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = new ConcurrentHashMap<>();
 
         for (MutableMediaMetadata m : mMusicListById.values()) {
-            String genre = m.metadata.getString(MediaMetadata.METADATA_KEY_GENRE);
-            List<MediaMetadata> list = newMusicListByGenre.get(genre);
+            String id = m.metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_ID);
+            List<MediaMetadataCompat> list = stationsList.get(id);
             if (list == null) {
                 list = new ArrayList<>();
-                newMusicListByGenre.put(genre, list);
+                stationsList.put(id, list);
             }
             list.add(m.metadata);
         }
-        mMusicListByGenre = newMusicListByGenre;
+        mStationLists = stationsList;
     }
+
 
     private synchronized void retrieveMedia() {
         try {
@@ -219,14 +146,14 @@ public class MusicProvider {
                 JSONArray tracks = jsonObj.getJSONArray(JSON_MUSIC);
                 if (tracks != null) {
                     for (int j = 0; j < tracks.length(); j++) {
-                        MediaMetadata item = buildFromJSON(tracks.getJSONObject(j), path);
+                        MediaMetadataCompat item = buildFromJSON(tracks.getJSONObject(j), path);
                         String musicId = item.getString(MediaMetadata.METADATA_KEY_MEDIA_ID);
                         mMusicListById.put(musicId, new MutableMediaMetadata(musicId, item));
                     }
-                    buildListsByGenre();
+                    buildListById();
+
                 }
                 mCurrentState = State.INITIALIZED;
-                System.out.println(mCurrentState);
             }
         } catch (JSONException e) {
         } finally {
@@ -234,13 +161,12 @@ public class MusicProvider {
                 // Something bad happened, so we reset state to NON_INITIALIZED to allow
                 // retries (eg if the network connection is temporary unavailable)
                 mCurrentState = State.NON_INITIALIZED;
-                System.out.println(mCurrentState);
             }
         }
     }
 
 
-    private MediaMetadata buildFromJSON(JSONObject json, String basePath) throws JSONException {
+    private MediaMetadataCompat buildFromJSON(JSONObject json, String basePath) throws JSONException {
 
         String title = json.getString("name");
 
@@ -253,25 +179,17 @@ public class MusicProvider {
         String source = stream.getString("url");
         String iconUrl = image.getString("ori");
 
-
-        // Media is stored relative to JSON file
         if (!source.startsWith("http")) {
             source = basePath + source;
         }
-        
+
         if (!iconUrl.startsWith("http")) {
             iconUrl = basePath + iconUrl;
         }
-        // Since we don't have a unique ID in the server, we fake one using the hashcode of
-        // the music source. In a real world app, this could come from the server.
 
-         String id = String.valueOf(source.hashCode());
+        String id = String.valueOf(json.getInt("id"));
 
-        // Adding the music source to the MediaMetadata (and consequently using it in the
-        // mediaSession.setMetadata) is not a good idea for a real world music app, because
-        // the session metadata can be accessed by notification listeners. This is done in this
-        // sample for convenience only.
-        return new MediaMetadata.Builder()
+        return new MediaMetadataCompat.Builder()
                 .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, id)
                 .putString(MediaMetadata.METADATA_KEY_MEDIA_URI, source)
                 .putString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI, iconUrl)

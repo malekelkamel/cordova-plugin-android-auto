@@ -4,15 +4,21 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.MediaDescription;
 import android.media.MediaMetadata;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
 import android.support.v4.media.MediaBrowserServiceCompat;
+import android.support.v4.media.MediaDescriptionCompat;
+import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * This class provides a MediaBrowser through a service. It exposes the media library to a browsing
@@ -122,18 +128,43 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
                 @Override
                 public void onMusicCatalogReady(boolean success) {
                     if (success) {
-                        //Success
+                        loadChildrenImpl(parentMediaId, result);
                     } else {
                         result.sendResult(new ArrayList<MediaItem>());
+
                     }
                 }
             });
 
         } else {
             // If our music catalog is already loaded/cached, load them into result immediately
-            // loadChildrenImpl(parentMediaId, result);
+            loadChildrenImpl(parentMediaId, result);
         }                        
-       //  result.sendResult(new ArrayList<MediaItem>());
+      //result.sendResult(new ArrayList<MediaItem>());
+    }
+
+    private void loadChildrenImpl(final String parentMediaId,
+                                  final Result<List<MediaItem>> result) {
+
+        ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = mMusicProvider.getStationsList();
+        List<MediaItem> mediaItems = new ArrayList<>();
+
+        Iterator<Map.Entry<String, List<MediaMetadataCompat>>> iterator = stationsList.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, List<MediaMetadataCompat>> station = iterator.next();
+            List<MediaMetadataCompat>  tmpStation = station.getValue();
+           
+            MediaItem item = new MediaItem (
+                new MediaDescriptionCompat.Builder()
+                        .setMediaId("sfsfakls")
+                        .setTitle("stes")
+                        .build(), MediaItem.FLAG_PLAYABLE
+            );
+
+            mediaItems.add(item);
+    }
+        result.sendResult(mediaItems);
+
     }
 
     private final class MediaSessionCallback extends MediaSessionCompat.Callback {
@@ -178,4 +209,5 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
         public void onPlayFromSearch(final String query, final Bundle extras) {
         }
     }
+
 }
