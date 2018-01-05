@@ -256,7 +256,6 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
             for(int i=0; i< tmpStations.size(); i++) {
                 MediaMetadataCompat st = tmpStations.get(i);
                 if(st.getString(METADATA_KEY_MEDIA_ID).equals(id)) {
-                    System.out.println("got it");
                     metaData =  st;
                 }
             }
@@ -266,7 +265,6 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
     private String getMediaUrl(String id) {
         String url = "";
         ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = mMusicProvider.getStationsList();
-        System.out.println(stationsList);
         Iterator<Map.Entry<String, List<MediaMetadataCompat>>> iterator = stationsList.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, List<MediaMetadataCompat>> station = iterator.next();
@@ -275,7 +273,6 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
                 MediaMetadataCompat st = tmpStations.get(i);
                 if(st.getString(METADATA_KEY_MEDIA_ID).equals(id)) {
                     url = st.getString(METADATA_KEY_MEDIA_URI);
-                    System.out.println(url);
                 }
             }
         }
