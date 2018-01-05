@@ -23,6 +23,7 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.a
     <config-file parent="/*" target="AndroidManifest.xml">
         <uses-permission android:name="android.permission.INTERNET" />
         <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+        <uses-permission android:name="android.permission.WAKE_LOCK" />
     </config-file>
     
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
@@ -45,6 +46,7 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.a
     <source-file src="src/android/CogecoStreamingService.java" target-dir="src/com/bhvr/android/auto" />
     <source-file src="src/android/MusicProvider.java" target-dir="src/com/bhvr/android/auto" />
     <source-file src="src/android/MutableMediaMetadata.java" target-dir="src/com/bhvr/android/auto" />
+    <source-file src="src/android/PlaybackManager.java" target-dir="src/com/bhvr/android/auto" />
     
     <!-- RESSOURCES FILES -->
     <resource-file src="src/android/res/automotive_app_desc.xml" target="res/xml/automotive_app_desc.xml" />

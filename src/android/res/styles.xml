@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="CarTheme" parent="android:Theme.Material.Light">
+    <style name="CarTheme" parent="android:ThemeOverlay.Material.Dark">
         <!-- colorPrimaryDark is currently used in Android Auto for:
              - App background
              - Drawer right side ("more" custom actions) background
@@ -15,6 +15,6 @@
              - progress bar
              - floating action button background (Play/Pause in media apps)
          -->
-        <item name="android:colorAccent">#00B8D4</item>
+        <item name="android:colorAccent">#7f00d4</item>
     </style>
 </resources>

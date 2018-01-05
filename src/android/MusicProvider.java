@@ -172,6 +172,7 @@ public class MusicProvider {
 
         JSONObject images = json.getJSONObject("images");
         JSONObject image = images.getJSONObject("logo");
+        JSONObject coloredImages = images.getJSONObject("logo");
 
         JSONArray streams = json.getJSONArray("streams");
         JSONObject stream = streams.getJSONObject(0);

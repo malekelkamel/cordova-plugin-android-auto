@@ -4,8 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.media.MediaDescription;
-import android.media.MediaMetadata;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -15,6 +13,8 @@ import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 
+import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -22,10 +22,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import static android.media.MediaMetadata.METADATA_KEY_ALBUM_ART_URI;
-import static android.media.MediaMetadata.METADATA_KEY_ART_URI;
 import static android.media.MediaMetadata.METADATA_KEY_MEDIA_ID;
 import static android.media.MediaMetadata.METADATA_KEY_MEDIA_URI;
 import static android.media.MediaMetadata.METADATA_KEY_TITLE;
+import android.media.MediaPlayer;
+import android.support.v4.media.session.PlaybackStateCompat;
 
 /**
  * This class provides a MediaBrowser through a service. It exposes the media library to a browsing
@@ -83,6 +84,8 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
 
     private MediaSessionCompat mSession;
     private MusicProvider mMusicProvider;
+    private PlaybackManager mPlayback;
+    private List<MediaMetadataCompat>  stations;
     public static final String EXTRA_METADATA_ADVERTISEMENT =
             "android.media.metadata.ADVERTISEMENT";
 
@@ -96,8 +99,12 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
         mSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
                 MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
 
+
         IntentFilter filter = new IntentFilter("com.google.android.gms.car.media.STATUS");
         mMusicProvider = new MusicProvider();
+
+        final MediaPlayer mediaPlayer = new MediaPlayer();
+
 
         BroadcastReceiver receiver = new BroadcastReceiver() {
 
@@ -108,6 +115,14 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
             }
         };
         registerReceiver(receiver, filter);
+        mPlayback = new PlaybackManager(
+                        this,
+                        new PlaybackManager.Callback() {
+                            @Override
+                            public void onPlaybackStatusChanged(PlaybackStateCompat state) {
+                                mSession.setPlaybackState(state);
+                             }
+                        });
 
     }
 
@@ -120,6 +135,10 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
     public BrowserRoot onGetRoot(@NonNull String clientPackageName,
                                  int clientUid,
                                  Bundle rootHints) {
+        if(mSession.isActive()) {
+            mSession.setActive(true);
+        }
+
         return new BrowserRoot("root", null);
     }
 
@@ -181,6 +200,7 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
     private final class MediaSessionCallback extends MediaSessionCompat.Callback {
         @Override
         public void onPlay() {
+        super.onPlay();
         }
 
         @Override
@@ -194,6 +214,11 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
         @Override
         public void onPlayFromMediaId(String mediaId, Bundle extras) {
 
+            mSession.setActive(true);
+            MediaMetadataCompat metadata =getMediametaData(mediaId);
+            mSession.setMetadata(metadata);
+            mPlayback.setMediaUrl(getMediaUrl(mediaId));
+            mPlayback.play(metadata);
         }
 
         @Override
@@ -218,7 +243,43 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
 
         @Override
         public void onPlayFromSearch(final String query, final Bundle extras) {
+            System.out.println("Play");
         }
     }
+    private MediaMetadataCompat getMediametaData(String id) {
+        MediaMetadataCompat metaData = null;
+        ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = mMusicProvider.getStationsList();
+        Iterator<Map.Entry<String, List<MediaMetadataCompat>>> iterator = stationsList.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, List<MediaMetadataCompat>> station = iterator.next();
+            List<MediaMetadataCompat>  tmpStations = station.getValue();
+            for(int i=0; i< tmpStations.size(); i++) {
+                MediaMetadataCompat st = tmpStations.get(i);
+                if(st.getString(METADATA_KEY_MEDIA_ID).equals(id)) {
+                    System.out.println("got it");
+                    metaData =  st;
+                }
+            }
+        }
+        return metaData;
+    }
+    private String getMediaUrl(String id) {
+        String url = "";
+        ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = mMusicProvider.getStationsList();
+        System.out.println(stationsList);
+        Iterator<Map.Entry<String, List<MediaMetadataCompat>>> iterator = stationsList.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, List<MediaMetadataCompat>> station = iterator.next();
+            List<MediaMetadataCompat>  tmpStations = station.getValue();
+            for(int i=0; i< tmpStations.size(); i++) {
+                MediaMetadataCompat st = tmpStations.get(i);
+                if(st.getString(METADATA_KEY_MEDIA_ID).equals(id)) {
+                    url = st.getString(METADATA_KEY_MEDIA_URI);
+                    System.out.println(url);
+                }
+            }
+        }
 
+        return url;
+    }
 }
