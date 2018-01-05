@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.MediaDescription;
 import android.media.MediaMetadata;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
@@ -19,6 +20,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
+
+import static android.media.MediaMetadata.METADATA_KEY_ALBUM_ART_URI;
+import static android.media.MediaMetadata.METADATA_KEY_ART_URI;
+import static android.media.MediaMetadata.METADATA_KEY_MEDIA_ID;
+import static android.media.MediaMetadata.METADATA_KEY_MEDIA_URI;
+import static android.media.MediaMetadata.METADATA_KEY_TITLE;
 
 /**
  * This class provides a MediaBrowser through a service. It exposes the media library to a browsing
@@ -139,8 +146,7 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
         } else {
             // If our music catalog is already loaded/cached, load them into result immediately
             loadChildrenImpl(parentMediaId, result);
-        }                        
-      //result.sendResult(new ArrayList<MediaItem>());
+        }
     }
 
     private void loadChildrenImpl(final String parentMediaId,
@@ -152,16 +158,21 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
         Iterator<Map.Entry<String, List<MediaMetadataCompat>>> iterator = stationsList.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, List<MediaMetadataCompat>> station = iterator.next();
-            List<MediaMetadataCompat>  tmpStation = station.getValue();
-           
-            MediaItem item = new MediaItem (
-                new MediaDescriptionCompat.Builder()
-                        .setMediaId("sfsfakls")
-                        .setTitle("stes")
-                        .build(), MediaItem.FLAG_PLAYABLE
-            );
+            List<MediaMetadataCompat>  tmpStations = station.getValue();
 
-            mediaItems.add(item);
+            for(int i=0; i< tmpStations.size(); i++) {
+
+                MediaMetadataCompat st = tmpStations.get(i);
+                MediaItem item = new MediaItem (
+                        new MediaDescriptionCompat.Builder()
+                                .setMediaId(st.getString(METADATA_KEY_MEDIA_ID))
+                                .setTitle(st.getText(METADATA_KEY_TITLE))
+                                .setIconUri(Uri.parse(st.getString(METADATA_KEY_ALBUM_ART_URI)))
+                                .setMediaUri(Uri.parse(st.getString(METADATA_KEY_MEDIA_URI)))
+                                .build(), MediaItem.FLAG_PLAYABLE
+                );
+                mediaItems.add(item);
+            }
     }
         result.sendResult(mediaItems);
 
