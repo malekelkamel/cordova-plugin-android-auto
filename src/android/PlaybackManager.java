@@ -25,7 +25,7 @@ public class PlaybackManager implements AudioManager.OnAudioFocusChangeListener,
     private volatile MediaMetadataCompat mCurrentMedia;
 
     private MediaPlayer mMediaPlayer;
-    private MusicProvider mMusicProvider;
+    private StationsProvider mStationsProvider;
 
     private final Callback mCallback;
     private final AudioManager mAudioManager;
@@ -34,7 +34,7 @@ public class PlaybackManager implements AudioManager.OnAudioFocusChangeListener,
         this.mContext = context;
         this.mAudioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         this.mCallback = callback;
-        mMusicProvider = new MusicProvider();
+        mStationsProvider = new StationsProvider();
     }
 
     public boolean isPlaying() {

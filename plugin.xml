@@ -44,7 +44,7 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.a
 
     <source-file src="src/android/AndroidAuto.java" target-dir="src/com/bhvr/android/auto" />
     <source-file src="src/android/CogecoStreamingService.java" target-dir="src/com/bhvr/android/auto" />
-    <source-file src="src/android/MusicProvider.java" target-dir="src/com/bhvr/android/auto" />
+    <source-file src="src/android/StationsProvider.java" target-dir="src/com/bhvr/android/auto" />
     <source-file src="src/android/MutableMediaMetadata.java" target-dir="src/com/bhvr/android/auto" />
     <source-file src="src/android/PlaybackManager.java" target-dir="src/com/bhvr/android/auto" />
     

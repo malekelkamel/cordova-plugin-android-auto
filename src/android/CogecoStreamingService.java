@@ -83,7 +83,7 @@ import android.support.v4.media.session.PlaybackStateCompat;
 public class CogecoStreamingService extends MediaBrowserServiceCompat {
 
     private MediaSessionCompat mSession;
-    private MusicProvider mMusicProvider;
+    private StationsProvider mStationsProvider;
     private PlaybackManager mPlayback;
     private List<MediaMetadataCompat>  stations;
     private String currentMediaId;
@@ -104,7 +104,7 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
 
 
         IntentFilter filter = new IntentFilter("com.google.android.gms.car.media.STATUS");
-        mMusicProvider = new MusicProvider();
+        mStationsProvider = new StationsProvider();
 
         final MediaPlayer mediaPlayer = new MediaPlayer();
 
@@ -149,11 +149,11 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
     public void onLoadChildren(@NonNull final String parentMediaId,
                                @NonNull final Result<List<MediaItem>> result) {
 
-        if (!mMusicProvider.isInitialized()) {
+        if (!mStationsProvider.isInitialized()) {
             // Use result.detach to allow calling result.sendResult from another thread:
             result.detach();
 
-            mMusicProvider.retrieveMediaAsync(new MusicProvider.Callback() {
+            mStationsProvider.retrieveMediaAsync(new StationsProvider.Callback() {
                 @Override
                 public void onMusicCatalogReady(boolean success) {
                     if (success) {
@@ -174,7 +174,7 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
     private void loadChildrenImpl(final String parentMediaId,
                                   final Result<List<MediaItem>> result) {
 
-        ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = mMusicProvider.getStationsList();
+        ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = mStationsProvider.getStationsList();
         List<MediaItem> mediaItems = new ArrayList<>();
         Iterator<Map.Entry<String, List<MediaMetadataCompat>>> iterator = stationsList.entrySet().iterator();
 
@@ -276,7 +276,7 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
     }
     private MediaMetadataCompat getMediametaData(String id) {
         MediaMetadataCompat metaData = null;
-        ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = mMusicProvider.getStationsList();
+        ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = mStationsProvider.getStationsList();
         Iterator<Map.Entry<String, List<MediaMetadataCompat>>> iterator = stationsList.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, List<MediaMetadataCompat>> station = iterator.next();
@@ -294,7 +294,7 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
     private MediaMetadataCompat getMediametaDataByIndex(int index) {
         int j= 0;
         MediaMetadataCompat metaData = null;
-        ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = mMusicProvider.getStationsList();
+        ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = mStationsProvider.getStationsList();
         Iterator<Map.Entry<String, List<MediaMetadataCompat>>> iterator = stationsList.entrySet().iterator();
         while (iterator.hasNext() ) {
             j++;
@@ -314,7 +314,7 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
     private String getMediaUrl(String id) {
         String url = "";
         int j = 0;
-        ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = mMusicProvider.getStationsList();
+        ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = mStationsProvider.getStationsList();
         Iterator<Map.Entry<String, List<MediaMetadataCompat>>> iterator = stationsList.entrySet().iterator();
         while (iterator.hasNext()) {
             j++;
