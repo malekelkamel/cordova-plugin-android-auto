@@ -43,7 +43,7 @@ import java.util.concurrent.ConcurrentMap;
  * Utility class to get a list of MusicTrack's based on a server-side JSON
  * configuration.
  */
-public class MusicProvider {
+public class StationsProvider {
 
     private static final String CATALOG_URL =
         "https://api.cogecolive.com/stations?with=streams,images";
@@ -69,7 +69,7 @@ public class MusicProvider {
         void onMusicCatalogReady(boolean success);
     }
 
-    public MusicProvider() {
+    public StationsProvider() {
         mMusicListById = new ConcurrentHashMap<>();
     }
 
@@ -189,6 +189,7 @@ public class MusicProvider {
         }
 
         String id = String.valueOf(json.getInt("id"));
+
 
         return new MediaMetadataCompat.Builder()
                 .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, id)

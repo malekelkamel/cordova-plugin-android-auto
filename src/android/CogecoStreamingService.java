@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.MediaMetadata;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -87,8 +88,6 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
     private PlaybackManager mPlayback;
     private List<MediaMetadataCompat>  stations;
     private String currentMediaId;
-    private int currentMediaIndex;
-    private int stationsLength;
     public static final String EXTRA_METADATA_ADVERTISEMENT =
             "android.media.metadata.ADVERTISEMENT";
 
@@ -138,10 +137,11 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
     public BrowserRoot onGetRoot(@NonNull String clientPackageName,
                                  int clientUid,
                                  Bundle rootHints) {
-        if(mSession.isActive()) {
+        if(mSession.isActive()) { // Set CKoi as DefaultSession
             mSession.setActive(true);
-        }
 
+
+        }
         return new BrowserRoot("root", null);
     }
 
@@ -157,7 +157,19 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
                 @Override
                 public void onMusicCatalogReady(boolean success) {
                     if (success) {
+                        /***  Set Ckoi as Default Sation ****/
+
+                        currentMediaId = "1";
+                        mSession.setActive(true);
+                        MediaMetadataCompat metadata =getMediametaData("1");
+                        mSession.setMetadata(metadata);
+                        mPlayback.setMediaUrl(getMediaUrl("1"));
+                        mPlayback.play(metadata);
+                       
+                        /* *********   */
+
                         loadChildrenImpl(parentMediaId, result);
+
                     } else {
                         result.sendResult(new ArrayList<MediaItem>());
 
@@ -196,7 +208,6 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
                 mediaItems.add(item);
             }
         }
-        stationsLength = mediaItems.size();
         result.sendResult(mediaItems);
 
     }
@@ -239,30 +250,12 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
 
         @Override
         public void onSkipToNext() {
-            if(currentMediaIndex == stationsLength) {
-                return;
-            }
-            mSession.setActive(true);
-            MediaMetadataCompat metadata =getMediametaDataByIndex(currentMediaIndex + 1);
-            mSession.setMetadata(metadata);
-            mPlayback.setMediaUrl(getMediaUrl(currentMediaId));
-            mPlayback.play(metadata);
+            // Feature Disabled
         }
 
         @Override
         public void onSkipToPrevious() {
-            System.out.println("prev");
-            if(currentMediaIndex == 0) {
-                return;
-            }
-
-            mSession.setActive(true);
-            MediaMetadataCompat metadata =getMediametaDataByIndex(currentMediaIndex - 1);
-            mSession.setMetadata(metadata);
-            mPlayback.setMediaUrl(getMediaUrl(currentMediaId));
-            mPlayback.play(metadata);
-
-
+            // Feature Disabled
         }
 
         @Override
@@ -291,34 +284,11 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
         return metaData;
     }
 
-    private MediaMetadataCompat getMediametaDataByIndex(int index) {
-        int j= 0;
-        MediaMetadataCompat metaData = null;
-        ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = mStationsProvider.getStationsList();
-        Iterator<Map.Entry<String, List<MediaMetadataCompat>>> iterator = stationsList.entrySet().iterator();
-        while (iterator.hasNext() ) {
-            j++;
-            Map.Entry<String, List<MediaMetadataCompat>> station = iterator.next();
-            List<MediaMetadataCompat>  tmpStations = station.getValue();
-            MediaMetadataCompat st = tmpStations.get(index);
-            currentMediaId = st.getString(METADATA_KEY_MEDIA_ID);
-            if(j == index) {
-                metaData =  st;
-                currentMediaId = st.getString(METADATA_KEY_MEDIA_ID);
-            }
-
-        }
-        return metaData;
-    }
-
     private String getMediaUrl(String id) {
         String url = "";
-        int j = 0;
         ConcurrentMap<String, List<MediaMetadataCompat>> stationsList = mStationsProvider.getStationsList();
         Iterator<Map.Entry<String, List<MediaMetadataCompat>>> iterator = stationsList.entrySet().iterator();
         while (iterator.hasNext()) {
-            j++;
-            currentMediaIndex = j;
             Map.Entry<String, List<MediaMetadataCompat>> station = iterator.next();
             List<MediaMetadataCompat>  tmpStations = station.getValue();
             for(int i=0; i< tmpStations.size(); i++) {
@@ -328,7 +298,6 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
                 }
             }
         }
-
         return url;
     }
 }
