@@ -230,6 +230,9 @@ public class CogecoStreamingService extends MediaBrowserServiceCompat {
 
         @Override
         public void onPlayFromMediaId(String mediaId, Bundle extras) {
+            if(mPlayback.isPlaying()) {
+                mPlayback.stop();
+            }
             currentMediaId = mediaId;
             mSession.setActive(true);
             MediaMetadataCompat metadata =getMediametaData(mediaId);
